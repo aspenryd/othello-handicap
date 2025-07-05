@@ -66,9 +66,4 @@ jobs:
           commit_message: "Update players.js with latest data from API"
           # The branch to commit to (defaults to the current branch, which is 'main' here)
           branch: main
-          # The GitHub token for authentication (automatically provided by GitHub Actions)
-          token: ${{ secrets.GITHUB_TOKEN }}
           # The default committer and author are usually 'github-actions[bot]', which is appropriate.
-          # You can explicitly set them if needed:
-          # commit_user_name: "github-actions[bot]"
-          # commit_user_email: "github-actions[bot]@users.noreply.github.com"
