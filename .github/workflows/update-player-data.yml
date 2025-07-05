@@ -27,9 +27,12 @@ jobs:
           # This token is required to allow the action to push changes back to the repository
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 2: Fetch JSON data from the API and create players.js locally
+      # Step 2: Fetch JSON data from the API and create players.js locally in webfiles/
       - name: Fetch Player Data and Create File
         run: |
+          # Create the webfiles directory if it doesn't exist
+          mkdir -p webfiles
+
           # Use curl to fetch the JSON data from the specified URL
           # -s: Silent mode (don't show progress or error messages)
           PLAYER_JSON=$(curl -s http://ratings.katouche.fr/extract.php)
@@ -42,20 +45,20 @@ jobs:
             exit 1
           fi
 
-          # Create the players.js file directly on the runner's filesystem
+          # Create the players.js file directly on the runner's filesystem inside webfiles/
           # This avoids passing potentially large content as an action input argument.
-          cat <<EOF > players.js
+          cat <<EOF > webfiles/players.js
 const players = ${PLAYER_JSON};
 EOF
-          echo "players.js created locally."
-          cat players.js | head -n 5 # Print first 5 lines of the created file for verification
+          echo "webfiles/players.js created locally."
+          cat webfiles/players.js | head -n 5 # Print first 5 lines of the created file for verification
 
       # Step 3: Commit players.js using stefanzweifel/git-auto-commit-action
       - name: Commit players.js if changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          # Specify the files to commit. This action will only commit if 'players.js' has changed.
-          file_pattern: players.js
+          # Specify the files to commit. This action will only commit if 'webfiles/players.js' has changed.
+          file_pattern: webfiles/players.js
           # The commit message for the new or updated file
           commit_message: "Update players.js with latest data from API"
           # The branch to commit to (defaults to the current branch, which is 'main' here)
