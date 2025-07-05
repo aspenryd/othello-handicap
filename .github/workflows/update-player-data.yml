@@ -1,0 +1,86 @@
+# This workflow fetches JSON data from an external API,
+# wraps it in a JavaScript variable, and commits it as players.js to the repository.
+
+name: Update Player Data
+
+# Controls when the workflow will run
+on:
+  # Schedule the workflow to run once every day at 00:00 UTC
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight UTC
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Defines a single job named 'fetch-and-commit'
+jobs:
+  fetch-and-commit:
+    # Specifies the runner environment for this job
+    runs-on: ubuntu-latest
+
+    # Defines the steps that will be executed in this job
+    steps:
+      # Step 1: Checks out your repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          # This token is required to allow the action to push changes back to the repository
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 2: Fetch JSON data from the API
+      - name: Fetch Player Data
+        id: fetch_data # Assign an ID to this step to reference its outputs
+        run: |
+          # Use curl to fetch the JSON data from the specified URL
+          # -s: Silent mode (don't show progress or error messages)
+          # -o: Write output to a file (we'll capture it in a variable for processing)
+          # The output is stored in the 'data' output of this step
+          PLAYER_JSON=$(curl -s http://ratings.katouche.fr/extract.php)
+          echo "Fetched JSON data:"
+          echo "$PLAYER_JSON" | head -n 5 # Print first 5 lines for brevity in logs
+
+          # Check if the fetched data is empty or an error message
+          if [ -z "$PLAYER_JSON" ] || echo "$PLAYER_JSON" | grep -q "error"; then
+            echo "::error::Failed to fetch player data or received an error from the API."
+            exit 1
+          fi
+
+          # Pass the JSON data as an output of this step
+          echo "data=$PLAYER_JSON" >> $GITHUB_OUTPUT
+
+      # Step 3: Create the players.js file
+      - name: Create players.js file
+        run: |
+          # Retrieve the JSON data from the previous step's output
+          JSON_CONTENT="${{ steps.fetch_data.outputs.data }}"
+
+          # Construct the content for players.js
+          # The 'EOF' marker is used for a multi-line string (heredoc)
+          cat <<EOF > players.js
+const players = ${JSON_CONTENT};
+EOF
+          echo "players.js created successfully."
+          cat players.js | head -n 5 # Print first 5 lines of the created file for verification
+
+      # Step 4: Configure Git user for committing
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # Step 5: Commit and push the players.js file
+      - name: Commit and Push changes
+        run: |
+          # Add players.js to the staging area
+          git add players.js
+
+          # Check if there are any changes to commit
+          if ! git diff --cached --exit-code; then
+            echo "No changes to commit. Skipping commit and push."
+          else
+            # Commit the changes
+            git commit -m "Update players.js with latest data from API"
+            # Push the changes to the 'main' branch
+            git push origin main
+            echo "players.js committed and pushed successfully."
+          fi

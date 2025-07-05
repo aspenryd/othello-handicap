@@ -1,0 +1,90 @@
+ # This workflow deploys a static website to Azure Blob Storage configured for static website hosting.
+
+name: Deploy Static Site to Azure Storage
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on pushes to the main branch
+  push:
+    branches:
+      - main
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Defines a single job named 'deploy'
+jobs:
+  deploy:
+    # Specifies the runner environment for this job
+    runs-on: ubuntu-latest
+
+    # Defines the steps that will be executed in this job
+    steps:
+      # Step 1: Checks out your repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          # Optional: Fetch history for all branches and tags if needed for build tools
+          fetch-depth: 0
+
+      # Step 2: (Optional) Set up Node.js environment if your static site needs building
+      # Uncomment this section if you are using a framework like React, Vue, Angular, Hugo, Jekyll, etc.
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '20' # Or your desired Node.js version
+
+      # Step 3: (Optional) Install dependencies and build your static site
+      # Uncomment and modify this section if your static site requires a build step.
+      # Ensure the 'build' command outputs to the correct directory (e.g., 'build', 'dist', 'public').
+      # - name: Install Dependencies and Build
+      #   run: |
+      #     npm install # Or yarn install, pnpm install
+      #     npm run build # Or yarn build, pnpm build
+
+      # Step 4: Log in to Azure using a Service Principal
+      # The credentials are stored as GitHub Secrets for security.
+      # clientId, clientSecret, tenantId, and subscriptionId must be configured in your GitHub repository secrets.
+      - name: Azure Login action
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          enable-AzPSSession: true
+        
+      # Step 5: Upload static website files to Azure Blob Storage
+      # This uses the Azure CLI to upload the contents of your static site directory
+      # to the '$web' container of your storage account.
+      - name: Upload to Azure Blob Storage
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            # Set your Azure Storage Account name here
+            STORAGE_ACCOUNT_NAME="sthastaticwebtest" # <<< REPLACE WITH YOUR STORAGE ACCOUNT NAME
+
+            # Set the directory containing your static website files.
+            # If you have a build step, this would be your build output directory (e.g., 'build', 'dist', 'public').
+            # If it's a simple static HTML site, it might be '.' (the root of your repo)
+            SOURCE_DIRECTORY="." # <<< REPLACE IF YOUR STATIC FILES ARE IN A SUBDIRECTORY (e.g., 'dist', 'public')
+
+            echo "Uploading files from $SOURCE_DIRECTORY to $STORAGE_ACCOUNT_NAME/\$web"
+
+            # Uploads files, overwriting existing ones.
+            # --overwrite: Overwrites existing blobs.
+            # --account-name: Specifies the storage account.
+            # --container-name: Specifies the target container (always '$web' for static websites).
+            # --source: Specifies the local directory to upload.
+            # --auth-mode login: Uses the logged-in Azure identity.
+            az storage blob upload-batch \
+              --overwrite \
+              --account-name $STORAGE_ACCOUNT_NAME \
+              --destination '$web/othello_hcp' \
+              --source $SOURCE_DIRECTORY \
+              --auth-mode login
+
+            echo "Deployment to Azure Storage completed successfully!"
+
+      # Step 6: (Optional) Logout from Azure
+      # Good practice to clean up the login session.
+      - name: Azure Logout
+        run: |
+          az logout
