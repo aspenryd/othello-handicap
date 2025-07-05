@@ -64,7 +64,7 @@ jobs:
             # Set the directory containing your static website files.
             # If you have a build step, this would be your build output directory (e.g., 'build', 'dist', 'public').
             # If it's a simple static HTML site, it might be '.' (the root of your repo)
-            SOURCE_DIRECTORY="." # <<< REPLACE IF YOUR STATIC FILES ARE IN A SUBDIRECTORY (e.g., 'dist', 'public')
+            SOURCE_DIRECTORY="./webfiles" # <<< REPLACE IF YOUR STATIC FILES ARE IN A SUBDIRECTORY (e.g., 'dist', 'public')
 
             echo "Uploading files from $SOURCE_DIRECTORY to $STORAGE_ACCOUNT_NAME/\$web"
 
