@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Othello Handicap Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            color: #374151; /* Dark gray text */
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+            background-color: #ffffff;
+            border-radius: 0.75rem; /* Rounded corners */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+        }
+        table {
+            width: 100%;
+            border-collapse: separate; /* Use separate to allow border-radius on cells */
+            border-spacing: 0;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 0.75rem;
+            text-align: center;
+            border: 1px solid #e5e7eb; /* Light border for cells */
+        }
+        th {
+            background-color: #eff6ff; /* Light blue for table headers */
+            font-weight: 600;
+            color: #1f2937;
+            position: sticky; /* Make header sticky */
+            top: 0;
+            z-index: 10;
+        }
+        td {
+            background-color: #ffffff;
+        }
+        tr:nth-child(even) td {
+            background-color: #f9fafb; /* Slightly darker background for even rows */
+        }
+        .matrix-cell {
+            font-size: 0.875rem; /* Smaller text for matrix cells */
+        }
+        .player-select-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.5rem;
+        }
+        .player-scrollbox {
+            max-height: 50vh;
+            overflow-y: auto;
+            padding-right: 1rem;
+            margin-bottom: 1rem;
+        }
+        /* Sticky first column for the matrix table */
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            background-color: #f0f4f8; /* Slightly different background for sticky column */
+            z-index: 10;
+        }
+        /* Highlight row on hover */
+        tbody tr:hover {
+            background-color: #e0f2fe; /* Light blue on hover */
+        }
+        /* Tooltip style */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 0;
+            position: absolute;
+            z-index: 20;
+            bottom: 125%; /* Position above the element */
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%; /* At the bottom of the tooltip */
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="container">
+        <h1 class="text-3xl font-bold mb-6 text-center text-blue-700">Othello Handicap and Score Calculator</h1>
+
+        <div class="text-center mb-6">
+            <button id="show-player-selection-btn" class="hidden bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
+                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                Back to Player Selection
+            </button>
+        </div>
+
+        <div id="player-selection-section" class="mb-8 p-4 bg-blue-50 rounded-lg shadow-sm border border-blue-100">
+            <h2 class="text-xl font-semibold mb-4 text-blue-600">Select Players</h2>
+
+            <div class="flex flex-wrap gap-4 mb-4">
+                <div class="flex-1 min-w-[200px]">
+                    <label for="player-search" class="block text-sm font-medium text-gray-700 mb-1">Search Players:</label>
+                    <input type="text" id="player-search" placeholder="Type to search by name..." class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <label for="country-filter" class="block text-sm font-medium text-gray-700 mb-1">Filter by Country:</label>
+                    <select id="country-filter" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </select>
+                </div>
+            </div>
+
+            <p id="player-selection-info" class="text-center text-gray-500 italic mb-2">Select players and click "Generate Matrix" to see the results.</p>
+            <p class="text-sm text-gray-600 mb-2">Selected Players: <span id="selected-players-count" class="font-semibold">0</span></p>
+
+            <div class="player-scrollbox">
+                <div id="player-checkboxes" class="player-select-grid">
+                    </div>
+            </div>
+            
+            <div class="mt-6 flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+                <button id="select-all-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Select All Visible
+                </button>
+                <button id="deselect-all-btn" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    Deselect All
+                </button>
+                <button id="generate-matrix-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-5m3 5v-5m3 5v-5m4 5V9M1 18h22"></path></svg>
+                    Generate Matrix
+                </button>
+            </div>
+        </div>
+
+        <div id="matrix-container" class="mt-8 p-4 bg-white rounded-lg shadow-sm border border-gray-100 overflow-x-auto hidden">
+            <h2 class="text-xl font-semibold mb-2 text-gray-700">Handicap Matrix</h2>
+            <p class="text-sm text-gray-600 mb-4 text-center">
+                <span class="tooltip">
+                    <strong>Legend:</strong> H = Handicap (discs given/received)
+                    <span class="tooltiptext">Handicap is calculated as 2 discs for every 100 rating points difference, up to a maximum of 32 discs. No handicap is applied for rating differences less than 100.</span>
+                </span>
+                <span class="ml-4 tooltip">
+                    S = Othello Draw Score (minimum target score for the row player)
+                    <span class="tooltiptext">This is the minimum number of discs the row player needs to win, considering the handicap. A standard Othello draw is 32 discs.</span>
+                </span>
+            </p>
+            <div id="matrix-table-wrapper" class="relative">
+                <div id="loading-spinner" class="hidden absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-20">
+                    <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="players.js"></script>
+    <script src="main.js"></script>
+
+</body>
+</html>
