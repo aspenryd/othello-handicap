@@ -29,6 +29,7 @@ jobs:
 
       # Step 2: Fetch JSON data from the API and create players.js locally in webfiles/
       - name: Fetch Player Data and Create File
+        shell: bash
         run: |
           # Create the webfiles directory if it doesn't exist
           mkdir -p webfiles
@@ -47,7 +48,7 @@ jobs:
 
           # Create the players.js file directly on the runner's filesystem inside webfiles/
           # This avoids passing potentially large content as an action input argument.
-          cat <<EOF > webfiles/players.js
+          cat <<'EOF' > webfiles/players.js
 const players = ${PLAYER_JSON};
 EOF
           echo "webfiles/players.js created locally."
