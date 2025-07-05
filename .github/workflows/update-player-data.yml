@@ -48,7 +48,7 @@ jobs:
 
           # Create the players.js file directly on the runner's filesystem inside webfiles/
           # This avoids passing potentially large content as an action input argument.
-          cat <<'EOF' > webfiles/players.js
+          cat << EOF > webfiles/players.js
 const players = [{}];
 EOF
           echo "webfiles/players.js created locally."
