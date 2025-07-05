@@ -44,21 +44,15 @@ jobs:
 
       # Step 4: Log in to Azure using a Service Principal
       # The credentials are stored as GitHub Secrets for security.
-      # AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_TENANT_ID must be configured in your GitHub repository secrets.
+      # AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_TENANT_ID, and AZURE_SUBSCRIPTION_ID must be configured in your GitHub repository secrets.
       - name: Azure Login
         uses: azure/login@v1
         with:
+          # Use individual parameters for client ID, tenant ID, subscription ID, and client secret
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          # Use 'federated-credentials' for OIDC or 'service-principal' for client secret
-          # For client secret, use:
-          # creds: ${{ secrets.AZURE_CLIENT_SECRET }}
-          # For OIDC, you would configure the service principal for federated credentials and use:
-          # auth-type: 'federated'
-          # tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          # subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          # For this example, we assume client secret for simplicity.
-          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}", "clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}", "tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} 
+          creds: ${{ secrets.AZURE_CLIENT_SECRET }} 
 
       # Step 5: Upload static website files to Azure Blob Storage
       # This uses the Azure CLI to upload the contents of your static site directory
