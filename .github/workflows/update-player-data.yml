@@ -27,9 +27,8 @@ jobs:
           # This token is required to allow the action to push changes back to the repository
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 2: Fetch JSON data from the API
-      - name: Fetch Player Data
-        id: fetch_data # Assign an ID to this step to reference its outputs
+      # Step 2: Fetch JSON data from the API and create players.js locally
+      - name: Fetch Player Data and Create File
         run: |
           # Use curl to fetch the JSON data from the specified URL
           # -s: Silent mode (don't show progress or error messages)
@@ -43,27 +42,27 @@ jobs:
             exit 1
           fi
 
-          # Pass the JSON data as an output of this step
-          echo "data=$PLAYER_JSON" >> "$GITHUB_OUTPUT"
+          # Create the players.js file directly on the runner's filesystem
+          # This avoids passing potentially large content as an action input argument.
+          cat <<EOF > players.js
+const players = ${PLAYER_JSON};
+EOF
+          echo "players.js created locally."
+          cat players.js | head -n 5 # Print first 5 lines of the created file for verification
 
-      # Step 3: Create and Commit players.js using 1arp/create-a-file-action
-      - name: Create and Commit players.js
-        uses: 1arp/create-a-file-action@0.4.5
+      # Step 3: Commit players.js using stefanzweifel/git-auto-commit-action
+      - name: Commit players.js if changed
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          # The path where the file will be created relative to the repository root
-          path: ./webfiles/players.js
-          # The content of the file, using the JSON data fetched in the previous step
-          content: |
-            const players = ${{ steps.fetch_data.outputs.data }};
+          # Specify the files to commit. This action will only commit if 'players.js' has changed.
+          file_pattern: players.js
           # The commit message for the new or updated file
-          commit-message: "Update players.js with latest data from API"
-          # The name of the committer
-          committer: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-          # The name of the author (can be the same as committer)
-          author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-          # The branch to commit to
+          commit_message: "Update players.js with latest data from API"
+          # The branch to commit to (defaults to the current branch, which is 'main' here)
           branch: main
-          # The GitHub token for authentication
+          # The GitHub token for authentication (automatically provided by GitHub Actions)
           token: ${{ secrets.GITHUB_TOKEN }}
-          # Set to true to only commit if there are changes
-          update-only: true
+          # The default committer and author are usually 'github-actions[bot]', which is appropriate.
+          # You can explicitly set them if needed:
+          # commit_user_name: "github-actions[bot]"
+          # commit_user_email: "github-actions[bot]@users.noreply.github.com"
