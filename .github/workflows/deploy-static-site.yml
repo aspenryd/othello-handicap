@@ -8,7 +8,9 @@ on:
   push:
     branches:
       - main
-
+    paths:
+      - './webfiles/**' # This means any changes inside the webfiles directory or its subdirectories
+      
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
