@@ -1,4 +1,4 @@
- # This workflow deploys a static website to Azure Blob Storage configured for static website hosting.
+# This workflow deploys a static website to Azure Blob Storage configured for static website hosting.
 
 name: Deploy Static Site to Azure Storage
 
@@ -9,8 +9,8 @@ on:
     branches:
       - main
     paths:
-      - './webfiles/**' # This means any changes inside the webfiles directory or its subdirectories
-      
+      - 'webfiles/**' # This means any changes inside the webfiles directory or its subdirectories
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -52,7 +52,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
           enable-AzPSSession: true
-        
+
       # Step 5: Upload static website files to Azure Blob Storage
       # This uses the Azure CLI to upload the contents of your static site directory
       # to the '$web' container of your storage account.
